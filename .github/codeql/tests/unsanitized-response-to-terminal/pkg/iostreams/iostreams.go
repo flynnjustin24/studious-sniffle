@@ -26,4 +26,3 @@ func (u Untrusted) String() string { return sanitizeStub(u.raw) }
 func (u Untrusted) Raw() string { return u.raw }
 
 func sanitizeStub(s string) string { return s }
-
