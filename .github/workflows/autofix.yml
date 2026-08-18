@@ -36,7 +36,7 @@ jobs:
 
       - name: Run gofmt
         shell: bash
-        run: gofmt -w $(git ls-files '*.go')
+        run: git ls-files '*.go' | xargs gofmt -w
 
       - name: Run go mod tidy
         run: go mod tidy
@@ -84,14 +84,13 @@ jobs:
             --jq '.[0].number')
 
           body=$(mktemp)
-          cat > "$body" <<'EOF'
-          ## Summary
-          - apply automated formatting and lint fixes
-          - refresh module metadata when needed
-
-          ## Testing
-          - not run
-          EOF
+          printf '%s\n' \
+            '## Summary' \
+            '- apply automated formatting and lint fixes' \
+            '- refresh module metadata when needed' \
+            '' \
+            '## Testing' \
+            '- not run' > "$body"
 
           if [ -n "$pr_number" ]; then
             gh pr edit "$pr_number" \
