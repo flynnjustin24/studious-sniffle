@@ -44,13 +44,14 @@ tools:
     # Keep this list in sync with the GitHub App used by safe-outputs below.
     allowed-repos: "all"
     min-integrity: approved
-    trusted-users: ["cli-triage[bot]"]
+    trusted-users: ["cli-triage[bot]", "github-actions[bot]"]
     # Setting a guard policy makes the compiler wrap any custom pre-agent
     # `steps:` in a DIFC proxy that routes their `gh` calls through the same
     # integrity filter. That proxy MUST be off here, because it applies
     # `min-integrity` but NOT `trusted-users` - those are resolved at runtime,
     # after the proxy starts. The dedup pre-flight in dependabot-triage.md reads
-    # back its own `cli-triage[bot]` comments to find the head-SHA marker, and
+    # back its own `cli-triage[bot]` and `github-actions[bot]` comments to find
+    # the head-SHA marker, and
     # under the proxy those comments are exactly what gets filtered out: the
     # marker would never be found and the workflow would re-comment on every open
     # Dependabot PR every hour, which is the failure this whole design exists to
@@ -59,7 +60,7 @@ tools:
     # Turning the proxy off does not widen the injection surface. The pre-flight
     # never hands API content to the model: it extracts PR numbers, head SHAs and
     # CI states, and it matches the marker only within comments it has already
-    # narrowed to `.user.login == "cli-triage[bot]"`. That login check, not
+    # narrowed to the known bot logins. That login check, not
     # integrity, is what stops a third party forging a marker. The agent itself
     # is unaffected - it still runs under the full policy above via the MCP
     # gateway.
@@ -77,9 +78,10 @@ safe-outputs:
   #
   # PR conversation comments are posted through the issues API, so the app needs
   # "Issues: write". The compiler also requests "Pull requests: write" because
-  # `target: "*"` allows either kind of item. The app posts as `cli-triage[bot]`,
-  # which is the identity the pre-flight step looks for when deduplicating - see
-  # `trusted-users` above.
+  # `target: "*"` allows either kind of item. The app posts as
+  # `cli-triage[bot]`; if token minting fails, the workflow falls back to
+  # `github-actions[bot]`. The pre-flight dedup step accepts both identities -
+  # see `trusted-users` above.
   github-app:
     client-id: ${{ secrets.CLI_TRIAGE_APP_CLIENT_ID }}
     private-key: ${{ secrets.CLI_TRIAGE_APP_PRIVATE_KEY }}
