@@ -15,6 +15,7 @@ go test ./...                              # All unit tests
 go test ./pkg/cmd/issue/list/... -run TestIssueList_nontty  # Single test
 go test -tags acceptance ./acceptance      # Acceptance tests
 make lint                                  # golangci-lint (same as CI)
+make lint-fix                              # golangci-lint with --fix
 ```
 
 **Before committing, ensure both tests and linter pass:**

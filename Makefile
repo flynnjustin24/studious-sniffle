@@ -42,9 +42,12 @@ completions: bin/gh$(EXE)
 	# .deb and .rpm packages. See https://github.com/cli/cli/issues/13166
 	cp ./share/zsh/site-functions/_gh ./share/zsh/vendor-completions/_gh
 
-.PHONY: lint
+.PHONY: lint lint-fix
 lint:
 	golangci-lint run ./...
+
+lint-fix:
+	golangci-lint run --fix ./...
 
 # just convenience tasks around `go test`
 .PHONY: test
