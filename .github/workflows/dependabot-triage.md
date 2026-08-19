@@ -176,12 +176,13 @@ steps:
         n=$(printf '%s' "$entry" | jq -r '.number')
         head=$(printf '%s' "$entry" | jq -r '.head_sha')
 
-        # Find the newest dedup marker in our own comments. This read depends on
-        # `integrity-proxy: false` in the imported envelope: the pre-agent DIFC
-        # proxy applies min-integrity but not trusted-users, so with it enabled
-        # our own comments are filtered out here and dedup silently fails open.
+        # Find the newest dedup marker in prior triage comments. This read
+        # depends on `integrity-proxy: false` in the imported envelope: the
+        # pre-agent DIFC proxy applies min-integrity but not trusted-users, so
+        # with it enabled our own comments are filtered out here and dedup
+        # silently fails open.
         assessed=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/comments" --paginate \
-                     --jq '.[] | select(.user.login == "cli-triage[bot]") | .body' \
+                     --jq '.[] | select(.user.login == "cli-triage[bot]" or .user.login == "github-actions[bot]") | .body' \
                    | grep -oE '_Assessed at head commit `[0-9a-f]{40}`\._' \
                    | tail -1 | grep -oE '[0-9a-f]{40}' || true)
 

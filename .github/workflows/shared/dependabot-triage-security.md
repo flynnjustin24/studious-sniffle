@@ -36,32 +36,34 @@ tools:
     #     Dependabot PR. Dependabot itself is a trusted platform bot and is
     #     exempt, so its PR bodies still reach us.
     #
-    #   - It would otherwise hide the triager's own history from the agent. The
-    #     triage app posts with author_association NONE, so at `approved` its own
-    #     prior comments would be filtered out. `trusted-users` promotes the app
-    #     to `approved`.
+    #   - It would otherwise hide the triager's own history from the agent.
+    #     Historical comments may have been posted by `cli-triage[bot]`, while
+    #     new comments are posted by `github-actions[bot]` through the workflow's
+    #     own GITHUB_TOKEN. Both identities need to survive the integrity gate so
+    #     dedup can read either marker.
     #
-    # Keep this list in sync with the GitHub App used by safe-outputs below.
+    # Keep this list in sync with the identities accepted by the pre-flight
+    # dedup step in dependabot-triage.md.
     allowed-repos: "all"
     min-integrity: approved
-    trusted-users: ["cli-triage[bot]"]
+    trusted-users: ["cli-triage[bot]", "github-actions[bot]"]
     # Setting a guard policy makes the compiler wrap any custom pre-agent
     # `steps:` in a DIFC proxy that routes their `gh` calls through the same
     # integrity filter. That proxy MUST be off here, because it applies
     # `min-integrity` but NOT `trusted-users` - those are resolved at runtime,
     # after the proxy starts. The dedup pre-flight in dependabot-triage.md reads
-    # back its own `cli-triage[bot]` comments to find the head-SHA marker, and
-    # under the proxy those comments are exactly what gets filtered out: the
-    # marker would never be found and the workflow would re-comment on every open
+    # back prior triage comments by login to find the head-SHA marker, and under
+    # the proxy those comments are exactly what gets filtered out: the marker
+    # would never be found and the workflow would re-comment on every open
     # Dependabot PR every hour, which is the failure this whole design exists to
     # prevent.
     #
     # Turning the proxy off does not widen the injection surface. The pre-flight
     # never hands API content to the model: it extracts PR numbers, head SHAs and
     # CI states, and it matches the marker only within comments it has already
-    # narrowed to `.user.login == "cli-triage[bot]"`. That login check, not
-    # integrity, is what stops a third party forging a marker. The agent itself
-    # is unaffected - it still runs under the full policy above via the MCP
+    # narrowed to the known triage bot logins. That login check, not integrity,
+    # is what stops a third party forging a marker. The agent itself is
+    # unaffected - it still runs under the full policy above via the MCP
     # gateway.
     integrity-proxy: false
 
@@ -71,18 +73,16 @@ tools:
 network: defaults
 
 safe-outputs:
-  # Post as the shared triage GitHub App (the same app used by issue-triage).
-  # The app mints a short-lived installation token per run and is revoked
-  # afterwards, so the workflow's own GITHUB_TOKEN can stay read-only.
+  # Post with the workflow's own GITHUB_TOKEN instead of the shared triage app.
+  # The scheduled job already has a trusted repository token, and routing safe
+  # outputs through it removes the failure mode where a malformed app private
+  # key makes the entire run fail before the agent can even noop.
   #
-  # PR conversation comments are posted through the issues API, so the app needs
-  # "Issues: write". The compiler also requests "Pull requests: write" because
-  # `target: "*"` allows either kind of item. The app posts as `cli-triage[bot]`,
-  # which is the identity the pre-flight step looks for when deduplicating - see
-  # `trusted-users` above.
-  github-app:
-    client-id: ${{ secrets.CLI_TRIAGE_APP_CLIENT_ID }}
-    private-key: ${{ secrets.CLI_TRIAGE_APP_PRIVATE_KEY }}
+  # PR conversation comments are posted through the issues API, so the generated
+  # safe-outputs job still requests "Issues: write". The compiler also requests
+  # "Pull requests: write" because `target: "*"` allows either kind of item.
+  # Dedup still accepts historical `cli-triage[bot]` comments as well as new
+  # `github-actions[bot]` comments - see `trusted-users` above.
   # The ONLY write this workflow can perform is posting a comment. There is
   # deliberately no merge, approve, or label safe-output, so the triager is
   # advisory only and can never auto-merge a pull request.
