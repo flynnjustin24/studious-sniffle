@@ -144,7 +144,7 @@ $TC_LINE
 EOF
 )
 
-git push -u origin "$BRANCH"
+git push -u origin "$BRANCH" --force-with-lease
 
 gh pr create --title "$PR_TITLE" --body "$PR_BODY" --fill
 
