@@ -46,7 +46,7 @@ tools:
     # dedup step in dependabot-triage.md.
     allowed-repos: "all"
     min-integrity: approved
-    trusted-users: ["cli-triage[bot]", "github-actions[bot]"]
+    trusted-users: ["github-actions[bot]", "cli-triage[bot]"]
     # Setting a guard policy makes the compiler wrap any custom pre-agent
     # `steps:` in a DIFC proxy that routes their `gh` calls through the same
     # integrity filter. That proxy MUST be off here, because it applies

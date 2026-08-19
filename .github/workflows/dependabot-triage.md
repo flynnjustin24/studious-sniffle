@@ -182,7 +182,7 @@ steps:
         # with it enabled our own comments are filtered out here and dedup
         # silently fails open.
         assessed=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/comments" --paginate \
-                     --jq '.[] | select(.user.login == "cli-triage[bot]" or .user.login == "github-actions[bot]") | .body' \
+                     --jq '.[] | select(.user.login == "github-actions[bot]" or .user.login == "cli-triage[bot]") | .body' \
                    | grep -oE '_Assessed at head commit `[0-9a-f]{40}`\._' \
                    | tail -1 | grep -oE '[0-9a-f]{40}' || true)
 
