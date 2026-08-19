@@ -146,6 +146,12 @@ EOF
 
 git push -u origin "$BRANCH" --force-with-lease
 
+existing_branch_pr_url=$(gh pr list --repo "$REPO" --state open --head "$BRANCH" --json url --jq '.[0].url // ""')
+if [[ -n "$existing_branch_pr_url" ]]; then
+  echo "Updated existing PR branch: $existing_branch_pr_url"
+  exit 0
+fi
+
 gh pr create --title "$PR_TITLE" --body "$PR_BODY" --fill
 
 echo "Done!"
